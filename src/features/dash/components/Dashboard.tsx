@@ -1,9 +1,9 @@
 // Import React
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import { useGetFarmsQuery, useLazyGetOrchardsQuery, useLazyGetTreeSurveysQuery, useLazyGetOrchardSurveysQuery } from '../../../services/FarmApi';
 import DashTable from './DashTable/DashTable';
 import TreeData from '../types/Tree';
-import { format } from 'path';
+import FarmLoader from './Loader/FarmLoader';
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
@@ -14,7 +14,16 @@ function formatDate(dateString: string): string {
 
   return `${day}/${month}/${year}`;
 }
+interface Column {
+  header: string;
+  accessor: string; // Key to access the data in each row
+}
 
+interface DashboardProps {
+  columns: Column[];
+  data: Record<string, any>[];
+  clickableColumns: Record<string, (value: any, row: Record<string, any>) => void>; // Object with accessor keys as keys and click handler functions as values
+}
 interface DashboardProps {
   name: string;
 }
@@ -32,13 +41,15 @@ interface ExtendedOrchardSurvey extends OrchardSurvey {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ name }) => {
+  const [isLoading, setLoading] = useState(true);
+
 
   const { data: farmsData, isLoading: isLoadingFarms, error: farmsErro, refetch } = useGetFarmsQuery();
   const [triggerGetOrchards, { data: orchardsData, isLoading: isLoadingOrchards, error: orchardsError }] = useLazyGetOrchardsQuery();
   const [triggerGetOrchardSurveys, { data: orchardSurveysData, isLoading: isLoadingOrchardSurveys, error: orchardSurveysError }] = useLazyGetOrchardSurveysQuery();
   const [triggerGetTreeSurveys, { data: treeSurveysData, isLoading: isLoadingTreeSurveys, error: treeSurveysError }] = useLazyGetTreeSurveysQuery();
   const [farms, setFarms] = useState<ExtendedFarm[]>([]);
-  
+
   const [treeData, setTreeData] = useState<TreeData[]>([]);
 
 
@@ -49,13 +60,13 @@ const Dashboard: React.FC<DashboardProps> = ({ name }) => {
         try {
           const allTreeData: TreeData[] = [];
           let idCounter = 1; // Initialize id counter
-          
+
           for (const farm of farmsData.results) {
-            const orchardsData = await triggerGetOrchards(''+farm.id).unwrap();
-            
+            const orchardsData = await triggerGetOrchards('' + farm.id).unwrap();
+
             for (const orchard of orchardsData.results) {
               const orchardSurveysData = await triggerGetOrchardSurveys(orchard.id).unwrap();
-              
+
               for (const survey of orchardSurveysData.results) {
                 const treeSurveysData = await triggerGetTreeSurveys(survey.id).unwrap();
 
@@ -70,10 +81,10 @@ const Dashboard: React.FC<DashboardProps> = ({ name }) => {
 
                   // Find the latest survey date
                   let latestSurveyDate = orchardSurveysData.results
-                  .map(survey => new Date(survey.date))
-                  .sort((a, b) => b.getTime() - a.getTime())[0]
-                  ?.toISOString() || 'N/A'; // Default to 'N/A' if no surveys are found
-                  
+                    .map(survey => new Date(survey.date))
+                    .sort((a, b) => b.getTime() - a.getTime())[0]
+                    ?.toISOString() || 'N/A'; // Default to 'N/A' if no surveys are found
+
                   latestSurveyDate = formatDate(latestSurveyDate);
 
                   // Aggregate the tree survey data into TreeData format
@@ -84,7 +95,9 @@ const Dashboard: React.FC<DashboardProps> = ({ name }) => {
                     totalTreesSurveyed: totalSurveys,
                     latestSurveyDate,
                     averageNDVI,
-                    averageNDRE
+                    averageNDRE,
+                    ndviValues: treeSurveysData.results.map(treeSurvey => treeSurvey.ndvi),
+                    ndreValues: treeSurveysData.results.map(treeSurvey => treeSurvey.ndre),
                   };
 
                   allTreeData.push(treeDataEntry);
@@ -94,7 +107,9 @@ const Dashboard: React.FC<DashboardProps> = ({ name }) => {
           }
 
           setTreeData(allTreeData);
+          setLoading(false);
         } catch (error) {
+          setLoading(false);
           console.error('Error fetching data:', error);
         }
       };
@@ -103,18 +118,6 @@ const Dashboard: React.FC<DashboardProps> = ({ name }) => {
     }
   }, [farmsData, triggerGetOrchards, triggerGetOrchardSurveys, triggerGetTreeSurveys]);
 
-
-
-
-
-
-  // Define the columns for the table
-  const columns = [
-    { header: 'ID', accessor: 'id' },
-    { header: 'Name', accessor: 'name' },
-    { header: 'Age', accessor: 'age' },
-    { header: 'City', accessor: 'city' },
-  ];
 
   const columns2 = [
     { header: 'ID', accessor: 'id' },
@@ -126,57 +129,37 @@ const Dashboard: React.FC<DashboardProps> = ({ name }) => {
     { header: 'Average NDRE', accessor: 'averageNDRE' },
   ];
 
-  // Define the data for the table
-  const datas = [
-    { id: 1, name: 'Alice', age: 28, city: 'New York' },
-    { id: 2, name: 'Bob', age: 35, city: 'San Francisco' },
-    { id: 3, name: 'Charlie', age: 42, city: 'Seattle' },
-    { id: 4, name: 'David', age: 33, city: 'Boston' },
-    { id: 5, name: 'Eve', age: 29, city: 'Austin' },
-    { id: 6, name: 'Frank', age: 37, city: 'Denver' },
-    { id: 7, name: 'Grace', age: 30, city: 'Chicago' },
-    { id: 8, name: 'Hank', age: 45, city: 'Houston' },
-    { id: 9, name: 'Ivy', age: 27, city: 'Philadelphia' },
-    { id: 10, name: 'Jack', age: 32, city: 'Phoenix' },
-    { id: 11, name: 'Kate', age: 31, city: 'San Diego' },
-    { id: 12, name: 'Leo', age: 34, city: 'Dallas' },
-  ];
-  
 
-  // Define click handlers for specific columns
   const clickableColumns = {
     averageNDVI: (value: any, row: Record<string, any>) => {
-      alert(`Clicked on averageNDVI: ${value} (Row: ${JSON.stringify(row)})`);
+      //alert(`Clicked on averageNDVI: ${value} (Row: ${JSON.stringify(row)})`);
     },
     averageNDRE: (value: any, row: Record<string, any>) => {
-      alert(`Clicked on averageNDVI: ${value} (Row: ${JSON.stringify(row)})`);
+     // alert(`Clicked on averageNDRE: ${value} (Row: ${JSON.stringify(row)})`);
     }
   };
-  const handleRefresh = () => {
-    // Manually trigger the refresh of farm data and subsequent queries
-    refetch();
-    // Optionally, you can trigger refetch of other queries here if needed
-    // farmApi.endpoints.getOrchards.refetch();
-    // farmApi.endpoints.getOrchardSurveys.refetch();
-    // farmApi.endpoints.getTreeSurveys.refetch();
-  };
 
+ 
 
   return (
     <div>
-     <h1>Aerbotics Farm Dash</h1>
-     <button onClick={handleRefresh} style={{ marginTop: '2rem' }}>
-        Refresh Table
-      </button>
-           <DashTable
-        columns={columns2}
-        data={treeData}
-        clickableColumns={clickableColumns}
-      />
-      
-     
+      <h1>Aerbotics Farm Dash</h1>
+      {isLoading ? (
+        <FarmLoader /> // Render FarmLoader while isLoading is true
+      ) : (
+        <div>
+          {/* Render other components or data once loading is complete */}
+          <DashTable
+            columns={columns2}
+            data={treeData}
+            clickableColumns={clickableColumns}
+          />
+          {/* Display fetched data or other components */}
+        </div>
+      )}
 
     </div>
+
   );
 };
 

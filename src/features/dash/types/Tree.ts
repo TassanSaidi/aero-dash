@@ -1,4 +1,4 @@
-export default interface TreeData{
+export default interface TreeData {
     id: number;
     farmName: string;
     orchardName: string;
@@ -6,4 +6,6 @@ export default interface TreeData{
     latestSurveyDate: string;
     averageNDVI: number;
     averageNDRE: number;
+    ndviValues: number[];
+    ndreValues: number[];
 };

@@ -1,38 +1,53 @@
-import React from 'react';
-// import 'bootstrap/dist/css/bootstrap.min.css'; // Import Bootstrap CSS
-import './DashTable.css'; // Import the custom CSS for styling
+import React, { useState } from 'react';
+import './DashTable.css';
+import Histogram from '../Graph/Histogram';
 
-// Define types for the props
 interface Column {
   header: string;
-  accessor: string; // Key to access the data in each row
+  accessor: string;
 }
 
 interface DashTableProps {
   columns: Column[];
   data: Record<string, any>[];
-  clickableColumns: Record<string, (value: any, row: Record<string, any>) => void>; // Object with accessor keys as keys and click handler functions as values
+  clickableColumns: Record<string, (value: any, row: Record<string, any>) => void>;
 }
 
 const DashTable: React.FC<DashTableProps> = ({ columns, data, clickableColumns }) => {
-  const [currentPage, setCurrentPage] = React.useState<number>(1);
-  const [clickedCell, setClickedCell] = React.useState<{ rowIndex: number, accessor: string } | null>(null);
-  const rowsPerPage: number = 10; // Define the maximum number of rows per page
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [clickedCell, setClickedCell] = useState<{ rowIndex: number, accessor: string } | null>(null);
+  const rowsPerPage: number = 10;
+  const [showHistogram, setShowHistogram] = useState<boolean>(false);
+  const [histogramData, setHistogramData] = useState<number[]>([]);
 
-  // Calculate the total number of pages
   const totalPages: number = Math.ceil(data.length / rowsPerPage);
 
-  // Calculate the indices for the current page's data
   const indexOfLastRow = currentPage * rowsPerPage;
   const indexOfFirstRow = indexOfLastRow - rowsPerPage;
   const currentData = data.slice(indexOfFirstRow, indexOfLastRow);
 
-  // Function to handle page change
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
 
-  // Function to render pagination controls
+  const handleCellClick = (columnAccessor: string, cellValue: any, rowIndex: number, row: Record<string, any>) => {
+    setClickedCell({ rowIndex, accessor: columnAccessor });
+
+    let values: number[] = [];
+    if (columnAccessor === 'averageNDVI') {
+      values = row['ndviValues'];
+    } else if (columnAccessor === 'averageNDRE') {
+      values = row['ndreValues'];
+    }
+
+    setHistogramData(values);
+    setShowHistogram(true);
+
+    if (clickableColumns[columnAccessor]) {
+      clickableColumns[columnAccessor](cellValue, row);
+    }
+  };
+
   const renderPaginationControls = () => {
     const pageNumbers = [];
     for (let i = 1; i <= totalPages; i++) {
@@ -75,17 +90,9 @@ const DashTable: React.FC<DashTableProps> = ({ columns, data, clickableColumns }
     );
   };
 
-  // Handle cell click and update the clicked cell state
-  const handleCellClick = (columnAccessor: string, cellValue: any, rowIndex: number, row: Record<string, any>) => {
-    setClickedCell({ rowIndex, accessor: columnAccessor });
-    if (clickableColumns[columnAccessor]) {
-      clickableColumns[columnAccessor](cellValue, row);
-    }
-  };
-
   return (
     <div className="container mt-4">
-      <h2>Styled Table with Pagination and Clickable Columns</h2>
+      <h2>Styled Table with Histogram and Pagination</h2>
       <div className="table-responsive">
         <table className="table table-bordered table-hover">
           <thead className="table-header">
@@ -101,6 +108,7 @@ const DashTable: React.FC<DashTableProps> = ({ columns, data, clickableColumns }
                 {columns.map((column) => {
                   const isClickable = column.accessor in clickableColumns;
                   const isClicked = clickedCell?.rowIndex === (indexOfFirstRow + rowIndex) && clickedCell?.accessor === column.accessor;
+
                   return (
                     <td
                       key={column.accessor}
@@ -116,6 +124,13 @@ const DashTable: React.FC<DashTableProps> = ({ columns, data, clickableColumns }
           </tbody>
         </table>
       </div>
+      {showHistogram && clickedCell && (
+        <Histogram
+          data={histogramData}
+          title={clickedCell.accessor === 'averageNDVI' ? 'NDVI Histogram' : 'NDRE Histogram'}
+          showHistogram={showHistogram}
+        />
+      )}
       {renderPaginationControls()}
     </div>
   );
