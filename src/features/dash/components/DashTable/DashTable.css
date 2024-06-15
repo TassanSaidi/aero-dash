@@ -1,0 +1,12 @@
+.table-header th {
+    background-color: #8a6ff7; /* White */
+    color: #000000; /* Black */
+    text-align: center;
+    padding: 10px;
+  }
+
+  .table-row:hover {
+    background-color: #92eb79; /* Light gray on hover */
+  }
+  
+  
