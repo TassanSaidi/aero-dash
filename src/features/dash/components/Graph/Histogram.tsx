@@ -10,40 +10,57 @@ interface HistogramProps {
 const Histogram: React.FC<HistogramProps> = ({ data, title, showHistogram }) => {
   const chartContainer = useRef<HTMLCanvasElement>(null);
   const chartInstance = useRef<Chart<"bar"> | null>(null);
-  const [chartVisible, setChartVisible] = useState(false); // Initially false
+
+  // Number of bins for the histogram
+  const binCount = 20;
+
+  // Function to bin the data into ranges and calculate frequencies
+  const getBinnedData = (data: number[], binCount: number) => {
+    // Determine the range of data
+    const min = Math.min(...data);
+    const max = Math.max(...data);
+    const binSize = (max - min) / binCount;
+
+    // Initialize bins and labels
+    const bins = new Array(binCount).fill(0);
+    const binLabels = new Array(binCount).fill('');
+
+    // Count data points in each bin
+    data.forEach(value => {
+      // Determine the bin index for the value
+      const binIndex = Math.floor((value - min) / binSize);
+      // Ensure the value falls within the bin range
+      const index = binIndex < binCount ? binIndex : binCount - 1;
+      bins[index]++;
+    });
+
+    // Create labels for each bin
+    for (let i = 0; i < binCount; i++) {
+      binLabels[i] = `${(min + i * binSize).toFixed(2)} - ${(min + (i + 1) * binSize).toFixed(2)}`;
+    }
+
+    return { bins, binLabels };
+  };
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (chartContainer.current && !chartContainer.current.contains(event.target as Node)) {
-        setChartVisible(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      if (chartInstance.current) {
-        chartInstance.current.destroy();
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (showHistogram && chartContainer.current) { // Assuming `showHistogram` is passed as a prop
+    if (showHistogram && chartContainer.current) {
       const ctx = chartContainer.current.getContext('2d');
 
       if (chartInstance.current) {
         chartInstance.current.destroy();
       }
 
+      // Bin the data into specified number of bins
+      const { bins, binLabels } = getBinnedData(data, binCount);
+
+      // Create the chart with binned data
       chartInstance.current = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: Array.from({ length: data.length }, (_, i) => `Label ${i + 1}`), // Example labels
+          labels: binLabels, // Labels for bins
           datasets: [{
-            label: 'Histogram',
-            data: data,
+            label: 'Frequency',
+            data: bins, // Frequency counts for each bin
             backgroundColor: 'rgba(54, 162, 235, 0.2)',
             borderColor: 'rgba(54, 162, 235, 1)',
             borderWidth: 1
@@ -70,7 +87,7 @@ const Histogram: React.FC<HistogramProps> = ({ data, title, showHistogram }) => 
             x: {
               title: {
                 display: true,
-                text: 'Value'
+                text: 'Value Range'
               }
             }
           }
