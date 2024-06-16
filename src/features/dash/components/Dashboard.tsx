@@ -1,29 +1,28 @@
-// Import React
 import React, { useEffect, useState } from 'react';
-import { useGetFarmsQuery, useLazyGetOrchardsQuery, useLazyGetTreeSurveysQuery, useLazyGetOrchardSurveysQuery } from '../../../services/FarmApi';
+import {
+  useGetFarmsQuery,
+  useLazyGetOrchardsQuery,
+  useLazyGetTreeSurveysQuery,
+  useLazyGetOrchardSurveysQuery,
+} from '../../../services/FarmApi';
 import DashTable from './DashTable/DashTable';
 import TreeData from '../types/Tree';
 import FarmLoader from './Loader/FarmLoader';
+import './Dashboard.css'; 
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
-
   const day = date.getDate().toString().padStart(2, '0');
-  const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Months are zero indexed
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
   const year = date.getFullYear();
-
   return `${day}/${month}/${year}`;
 }
+
 interface Column {
   header: string;
-  accessor: string; // Key to access the data in each row
+  accessor: string;
 }
 
-interface DashboardProps {
-  columns: Column[];
-  data: Record<string, any>[];
-  clickableColumns: Record<string, (value: any, row: Record<string, any>) => void>; // Object with accessor keys as keys and click handler functions as values
-}
 interface DashboardProps {
   name: string;
 }
@@ -40,37 +39,29 @@ interface ExtendedOrchardSurvey extends OrchardSurvey {
   treeSurveys?: TreeSurvey[];
 }
 
+// Dashboard component
 const Dashboard: React.FC<DashboardProps> = ({ name }) => {
   const [isLoading, setLoading] = useState(true);
-
-
-  const { data: farmsData, isLoading: isLoadingFarms, error: farmsErro, refetch } = useGetFarmsQuery();
-  const [triggerGetOrchards, { data: orchardsData, isLoading: isLoadingOrchards, error: orchardsError }] = useLazyGetOrchardsQuery();
-  const [triggerGetOrchardSurveys, { data: orchardSurveysData, isLoading: isLoadingOrchardSurveys, error: orchardSurveysError }] = useLazyGetOrchardSurveysQuery();
-  const [triggerGetTreeSurveys, { data: treeSurveysData, isLoading: isLoadingTreeSurveys, error: treeSurveysError }] = useLazyGetTreeSurveysQuery();
-  const [farms, setFarms] = useState<ExtendedFarm[]>([]);
-
+  const { data: farmsData, isLoading: isLoadingFarms } = useGetFarmsQuery();
+  const [triggerGetOrchards] = useLazyGetOrchardsQuery();
+  const [triggerGetOrchardSurveys] = useLazyGetOrchardSurveysQuery();
+  const [triggerGetTreeSurveys] = useLazyGetTreeSurveysQuery();
   const [treeData, setTreeData] = useState<TreeData[]>([]);
-
 
   useEffect(() => {
     if (farmsData?.results && farmsData.results.length > 0) {
-      // Start fetching orchards for each farm
       const fetchAllData = async () => {
         try {
           const allTreeData: TreeData[] = [];
-          let idCounter = 1; // Initialize id counter
+          let idCounter = 1;
 
           for (const farm of farmsData.results) {
             const orchardsData = await triggerGetOrchards('' + farm.id).unwrap();
-
             for (const orchard of orchardsData.results) {
               const orchardSurveysData = await triggerGetOrchardSurveys(orchard.id).unwrap();
-
               for (const survey of orchardSurveysData.results) {
                 const treeSurveysData = await triggerGetTreeSurveys(survey.id).unwrap();
 
-                // Calculate the average NDVI and NDRE from the list of tree surveys
                 if (treeSurveysData.results.length > 0) {
                   const totalSurveys = treeSurveysData.results.length;
                   const totalNDVI = treeSurveysData.results.reduce((sum, treeSurvey) => sum + treeSurvey.ndvi, 0);
@@ -79,25 +70,24 @@ const Dashboard: React.FC<DashboardProps> = ({ name }) => {
                   const averageNDVI = Number((totalNDVI / totalSurveys).toFixed(2));
                   const averageNDRE = Number((totalNDRE / totalSurveys).toFixed(2));
 
-                  // Find the latest survey date
                   let latestSurveyDate = orchardSurveysData.results
                     .map(survey => new Date(survey.date))
                     .sort((a, b) => b.getTime() - a.getTime())[0]
-                    ?.toISOString() || 'N/A'; // Default to 'N/A' if no surveys are found
+                    ?.toISOString() || 'N/A';
 
                   latestSurveyDate = formatDate(latestSurveyDate);
 
-                  // Aggregate the tree survey data into TreeData format
                   const treeDataEntry: TreeData = {
                     id: idCounter++,
                     farmName: farm.name,
-                    orchardName: orchard.name, // Assuming orchard name is the desired name
+                    orchardName: orchard.name,
                     totalTreesSurveyed: totalSurveys,
                     latestSurveyDate,
                     averageNDVI,
                     averageNDRE,
                     ndviValues: treeSurveysData.results.map(treeSurvey => treeSurvey.ndvi),
                     ndreValues: treeSurveysData.results.map(treeSurvey => treeSurvey.ndre),
+                    corordinates: treeSurveysData.results.map(treeSurvey => ({ lat: treeSurvey.lat, lng: treeSurvey.lng })),
                   };
 
                   allTreeData.push(treeDataEntry);
@@ -118,8 +108,7 @@ const Dashboard: React.FC<DashboardProps> = ({ name }) => {
     }
   }, [farmsData, triggerGetOrchards, triggerGetOrchardSurveys, triggerGetTreeSurveys]);
 
-
-  const columns2 = [
+  const columns = [
     { header: 'ID', accessor: 'id' },
     { header: 'Farm Name', accessor: 'farmName' },
     { header: 'Orchard Name', accessor: 'orchardName' },
@@ -129,37 +118,31 @@ const Dashboard: React.FC<DashboardProps> = ({ name }) => {
     { header: 'Average NDRE', accessor: 'averageNDRE' },
   ];
 
-
   const clickableColumns = {
     averageNDVI: (value: any, row: Record<string, any>) => {
-      //alert(`Clicked on averageNDVI: ${value} (Row: ${JSON.stringify(row)})`);
+
     },
     averageNDRE: (value: any, row: Record<string, any>) => {
-     // alert(`Clicked on averageNDRE: ${value} (Row: ${JSON.stringify(row)})`);
+    
     }
   };
 
- 
 
   return (
-    <div>
-      <h1>Aerbotics Farm Dash</h1>
+    <div className="dashboard-container">
+      <h1>Aerbotics Tree Survey Dashboard</h1>
       {isLoading ? (
-        <FarmLoader /> // Render FarmLoader while isLoading is true
+        <FarmLoader /> 
       ) : (
-        <div>
-          {/* Render other components or data once loading is complete */}
+        <div className="table-container">
           <DashTable
-            columns={columns2}
+            columns={columns}
             data={treeData}
             clickableColumns={clickableColumns}
           />
-          {/* Display fetched data or other components */}
         </div>
       )}
-
     </div>
-
   );
 };
 

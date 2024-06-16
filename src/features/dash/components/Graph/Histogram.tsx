@@ -1,46 +1,54 @@
-import React, { useEffect, useRef, useState } from 'react';
+// src/Histogram.tsx
+import React, { useEffect, useRef } from 'react';
 import Chart from 'chart.js/auto';
+import './Histogram.css'; // Import the CSS file for styling
 
 interface HistogramProps {
   data: number[]; // Array of numbers for the histogram
   title: string; // Title for the chart headline
   showHistogram: boolean; // Boolean to show/hide the histogram
+  onClose: () => void; // Function to handle closing the modal
 }
 
-const Histogram: React.FC<HistogramProps> = ({ data, title, showHistogram }) => {
+const Histogram: React.FC<HistogramProps> = ({ data, title, showHistogram, onClose }) => {
   const chartContainer = useRef<HTMLCanvasElement>(null);
   const chartInstance = useRef<Chart<"bar"> | null>(null);
 
   // Number of bins for the histogram
   const binCount = 20;
 
-  // Function to bin the data into ranges and calculate frequencies
   const getBinnedData = (data: number[], binCount: number) => {
-    // Determine the range of data
     const min = Math.min(...data);
     const max = Math.max(...data);
     const binSize = (max - min) / binCount;
-
-    // Initialize bins and labels
-    const bins = new Array(binCount).fill(0);
-    const binLabels = new Array(binCount).fill('');
-
-    // Count data points in each bin
+    const bins = Array(binCount).fill(0);
+  
     data.forEach(value => {
-      // Determine the bin index for the value
-      const binIndex = Math.floor((value - min) / binSize);
-      // Ensure the value falls within the bin range
-      const index = binIndex < binCount ? binIndex : binCount - 1;
-      bins[index]++;
+      const binIndex = Math.min(Math.floor((value - min) / binSize), binCount - 1);
+      bins[binIndex] += 1;
     });
-
-    // Create labels for each bin
-    for (let i = 0; i < binCount; i++) {
-      binLabels[i] = `${(min + i * binSize).toFixed(2)} - ${(min + (i + 1) * binSize).toFixed(2)}`;
-    }
-
-    return { bins, binLabels };
+  
+    const labels = bins.map((_, i) => `${(min + i * binSize).toFixed(2)}-${(min + (i + 1) * binSize).toFixed(2)}`);
+    return { labels, values: bins };
   };
+  
+  // Handle closing the modal when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showHistogram && chartContainer.current && !chartContainer.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      if (chartInstance.current) {
+        chartInstance.current.destroy();
+      }
+    };
+  }, [showHistogram, onClose]);
 
   useEffect(() => {
     if (showHistogram && chartContainer.current) {
@@ -50,23 +58,30 @@ const Histogram: React.FC<HistogramProps> = ({ data, title, showHistogram }) => 
         chartInstance.current.destroy();
       }
 
-      // Bin the data into specified number of bins
-      const { bins, binLabels } = getBinnedData(data, binCount);
+      const { labels, values } = getBinnedData(data, binCount);
 
-      // Create the chart with binned data
       chartInstance.current = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: binLabels, // Labels for bins
+          labels: labels,
           datasets: [{
             label: 'Frequency',
-            data: bins, // Frequency counts for each bin
+            data: values,
             backgroundColor: 'rgba(54, 162, 235, 0.2)',
             borderColor: 'rgba(54, 162, 235, 1)',
             borderWidth: 1
           }]
         },
         options: {
+          maintainAspectRatio: false, // Allow for custom sizing
+          layout: {
+            padding: {
+              left: 10,
+              right: 10,
+              top: 10,
+              bottom: 30, // Increased bottom padding for x-axis labels
+            },
+          },
           plugins: {
             title: {
               display: true,
@@ -87,27 +102,28 @@ const Histogram: React.FC<HistogramProps> = ({ data, title, showHistogram }) => 
             x: {
               title: {
                 display: true,
-                text: 'Value Range'
+                text: 'Range'
+              },
+              ticks: {
+                autoSkip: false, // Prevent auto skipping of labels
+                maxRotation: 45, // Allow labels to rotate up to 45 degrees
+                minRotation: 0
               }
             }
-          }
+          },
+          barPercentage: 1, // Set the bar width to 100% of the available space
+          categoryPercentage: 1 // Set the category width to 100% of the available space
         }
       });
-    } else {
-      if (chartInstance.current) {
-        chartInstance.current.destroy();
-      }
     }
   }, [data, title, showHistogram]);
 
   return (
-    <div>
-      {showHistogram && (
-        <div>
-          <h3>{title}</h3>
-          <canvas ref={chartContainer} width="400" height="400"></canvas>
-        </div>
-      )}
+    <div className={`modal ${showHistogram ? 'show' : ''}`} onClick={onClose}>
+      <div className="modal-content" onClick={e => e.stopPropagation()}>
+        <h3>{title}</h3>
+        <canvas ref={chartContainer} width="500" height="400"></canvas>
+      </div>
     </div>
   );
 };

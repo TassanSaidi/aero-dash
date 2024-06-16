@@ -1,0 +1,32 @@
+/* Dashboard.css */
+
+.dashboard-container {
+    background-color: #f0f7f4; /* Light green background */
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow effect */
+  }
+  
+  .table-container {
+    margin-top: 20px;
+  }
+  
+  /* Styling for the table */
+  .table-header {
+    background-color: #4caf50; /* Darker green for table header */
+    color: white;
+  }
+  
+  .table-row {
+    cursor: pointer; /* Change cursor to pointer on hover */
+  }
+  
+  .selected-row {
+    background-color: #e0f2f1; /* Light green background for selected row */
+  }
+  
+  .clickable-cell {
+    color: #1e6f5c; /* Dark green text color for clickable cells */
+    font-weight: bold;
+  }
+  

@@ -1,12 +1,60 @@
-.table-header th {
-    background-color: #8a6ff7; /* White */
-    color: #000000; /* Black */
-    text-align: center;
-    padding: 10px;
-  }
+/* src/DashTable.css */
 
-  .table-row:hover {
-    background-color: #92eb79; /* Light gray on hover */
-  }
-  
-  
+.container {
+  width: 100%;
+  margin: auto;
+}
+
+.centered-header {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #2c3e50; /* Darker shade for the header */
+}
+
+.table-responsive {
+  margin-top: 20px;
+}
+
+/* Style the table header */
+.table-header th {
+  background-color: #27ae60; /* Green color for the header */
+  color: #ffffff; /* White text color */
+  text-align: center; /* Center align the header text */
+  font-weight: bold; /* Bold text */
+}
+
+/* Style for rows and cells */
+.green-table .table-row:nth-child(even) {
+  background-color: #ecf0f1; /* Light grey for even rows */
+}
+
+.green-table .table-row:nth-child(odd) {
+  background-color: #d4efdf; /* Light green for odd rows */
+}
+
+.green-table .table-row.selected-row {
+  background-color: #82e0aa; /* Highlighted green for the selected row */
+}
+
+.green-table .table-row:hover {
+  background-color: #b2d8b6; /* Slightly darker green on hover */
+}
+
+.green-table .clickable-cell {
+  cursor: pointer;
+  color: #2980b9; /* Blue color for clickable cells */
+  text-decoration: underline; /* Underline for clickable cells */
+}
+
+.pagination .page-link {
+  color: #27ae60; /* Green color for pagination links */
+}
+
+.pagination .page-item.active .page-link {
+  background-color: #27ae60; /* Green background for active pagination link */
+  border-color: #27ae60; /* Green border for active pagination link */
+}
+
+.pagination .page-item.disabled .page-link {
+  color: #bdc3c7; /* Grey color for disabled pagination link */
+}

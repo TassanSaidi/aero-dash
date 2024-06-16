@@ -8,4 +8,5 @@ export default interface TreeData {
     averageNDRE: number;
     ndviValues: number[];
     ndreValues: number[];
+    corordinates: { lat: number; lng: number }[];
 };
