@@ -41,72 +41,72 @@ interface ExtendedOrchardSurvey extends OrchardSurvey {
 
 // Dashboard component
 const Dashboard: React.FC<DashboardProps> = ({ name }) => {
-  const [isLoading, setLoading] = useState(true);
-  const { data: farmsData, isLoading: isLoadingFarms } = useGetFarmsQuery();
-  const [triggerGetOrchards] = useLazyGetOrchardsQuery();
-  const [triggerGetOrchardSurveys] = useLazyGetOrchardSurveysQuery();
-  const [triggerGetTreeSurveys] = useLazyGetTreeSurveysQuery();
-  const [treeData, setTreeData] = useState<TreeData[]>([]);
+  // const [isLoading, setLoading] = useState(true);
+  // const { data: farmsData, isLoading: isLoadingFarms } = useGetFarmsQuery();
+  // const [triggerGetOrchards] = useLazyGetOrchardsQuery();
+  // const [triggerGetOrchardSurveys] = useLazyGetOrchardSurveysQuery();
+  // const [triggerGetTreeSurveys] = useLazyGetTreeSurveysQuery();
+  // const [treeData, setTreeData] = useState<TreeData[]>([]);
 
-  useEffect(() => {
-    if (farmsData?.results && farmsData.results.length > 0) {
-      const fetchAllData = async () => {
-        try {
-          const allTreeData: TreeData[] = [];
-          let idCounter = 1;
+  // useEffect(() => {
+  //   if (farmsData?.results && farmsData.results.length > 0) {
+  //     const fetchAllData = async () => {
+  //       try {
+  //         const allTreeData: TreeData[] = [];
+  //         let idCounter = 1;
 
-          for (const farm of farmsData.results) {
-            const orchardsData = await triggerGetOrchards('' + farm.id).unwrap();
-            for (const orchard of orchardsData.results) {
-              const orchardSurveysData = await triggerGetOrchardSurveys(orchard.id).unwrap();
-              for (const survey of orchardSurveysData.results) {
-                const treeSurveysData = await triggerGetTreeSurveys(survey.id).unwrap();
+  //         for (const farm of farmsData.results) {
+  //           const orchardsData = await triggerGetOrchards('' + farm.id).unwrap();
+  //           for (const orchard of orchardsData.results) {
+  //             const orchardSurveysData = await triggerGetOrchardSurveys(orchard.id).unwrap();
+  //             for (const survey of orchardSurveysData.results) {
+  //               const treeSurveysData = await triggerGetTreeSurveys(survey.id).unwrap();
 
-                if (treeSurveysData.results.length > 0) {
-                  const totalSurveys = treeSurveysData.results.length;
-                  const totalNDVI = treeSurveysData.results.reduce((sum, treeSurvey) => sum + treeSurvey.ndvi, 0);
-                  const totalNDRE = treeSurveysData.results.reduce((sum, treeSurvey) => sum + treeSurvey.ndre, 0);
+  //               if (treeSurveysData.results.length > 0) {
+  //                 const totalSurveys = treeSurveysData.results.length;
+  //                 const totalNDVI = treeSurveysData.results.reduce((sum, treeSurvey) => sum + treeSurvey.ndvi, 0);
+  //                 const totalNDRE = treeSurveysData.results.reduce((sum, treeSurvey) => sum + treeSurvey.ndre, 0);
 
-                  const averageNDVI = Number((totalNDVI / totalSurveys).toFixed(2));
-                  const averageNDRE = Number((totalNDRE / totalSurveys).toFixed(2));
+  //                 const averageNDVI = Number((totalNDVI / totalSurveys).toFixed(2));
+  //                 const averageNDRE = Number((totalNDRE / totalSurveys).toFixed(2));
 
-                  let latestSurveyDate = orchardSurveysData.results
-                    .map(survey => new Date(survey.date))
-                    .sort((a, b) => b.getTime() - a.getTime())[0]
-                    ?.toISOString() || 'N/A';
+  //                 let latestSurveyDate = orchardSurveysData.results
+  //                   .map(survey => new Date(survey.date))
+  //                   .sort((a, b) => b.getTime() - a.getTime())[0]
+  //                   ?.toISOString() || 'N/A';
 
-                  latestSurveyDate = formatDate(latestSurveyDate);
+  //                 latestSurveyDate = formatDate(latestSurveyDate);
 
-                  const treeDataEntry: TreeData = {
-                    id: idCounter++,
-                    farmName: farm.name,
-                    orchardName: orchard.name,
-                    totalTreesSurveyed: totalSurveys,
-                    latestSurveyDate,
-                    averageNDVI,
-                    averageNDRE,
-                    ndviValues: treeSurveysData.results.map(treeSurvey => treeSurvey.ndvi),
-                    ndreValues: treeSurveysData.results.map(treeSurvey => treeSurvey.ndre),
-                    corordinates: treeSurveysData.results.map(treeSurvey => ({ lat: treeSurvey.lat, lng: treeSurvey.lng })),
-                  };
+  //                 const treeDataEntry: TreeData = {
+  //                   id: idCounter++,
+  //                   farmName: farm.name,
+  //                   orchardName: orchard.name,
+  //                   totalTreesSurveyed: totalSurveys,
+  //                   latestSurveyDate,
+  //                   averageNDVI,
+  //                   averageNDRE,
+  //                   ndviValues: treeSurveysData.results.map(treeSurvey => treeSurvey.ndvi),
+  //                   ndreValues: treeSurveysData.results.map(treeSurvey => treeSurvey.ndre),
+  //                   corordinates: treeSurveysData.results.map(treeSurvey => ({ lat: treeSurvey.lat, lng: treeSurvey.lng })),
+  //                 };
 
-                  allTreeData.push(treeDataEntry);
-                }
-              }
-            }
-          }
+  //                 allTreeData.push(treeDataEntry);
+  //               }
+  //             }
+  //           }
+  //         }
 
-          setTreeData(allTreeData);
-          setLoading(false);
-        } catch (error) {
-          setLoading(false);
-          console.error('Error fetching data:', error);
-        }
-      };
+  //         setTreeData(allTreeData);
+  //         setLoading(false);
+  //       } catch (error) {
+  //         setLoading(false);
+  //         console.error('Error fetching data:', error);
+  //       }
+  //     };
 
-      fetchAllData();
-    }
-  }, [farmsData, triggerGetOrchards, triggerGetOrchardSurveys, triggerGetTreeSurveys]);
+  //     fetchAllData();
+  //   }
+  // }, [farmsData, triggerGetOrchards, triggerGetOrchardSurveys, triggerGetTreeSurveys]);
 
   const columns = [
     { header: 'ID', accessor: 'id' },
@@ -130,8 +130,8 @@ const Dashboard: React.FC<DashboardProps> = ({ name }) => {
 
   return (
     <div className="dashboard-container">
-      <h1>Aerbotics Tree Survey Dashboard</h1>
-      {isLoading ? (
+      <h1>Aerbotics Tree Survey Dashboard {name}</h1>
+      {/* {isLoading ? (
         <FarmLoader /> 
       ) : (
         <div className="table-container">
@@ -141,7 +141,7 @@ const Dashboard: React.FC<DashboardProps> = ({ name }) => {
             clickableColumns={clickableColumns}
           />
         </div>
-      )}
+      )} */}
     </div>
   );
 };

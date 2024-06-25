@@ -1,6 +1,7 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import {Farm} from '../features/types/Farm'
-import { get } from 'http';
+import {Orchard} from '../features/types/Orchard'
+
 
 interface Pagination {
     count: number;
