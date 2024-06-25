@@ -1,7 +1,9 @@
 // src/features/orchard/redux/orchardThunks.ts
 
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { getFarmOrchards } from '../../../services/AeroApi';
+import { getFarmOrchards, getTreeSurveyResults } from '../../../services/AeroApi';
+
+// integrate getTreeSurveyResults into thunk
 
 export const fetchFarmOrchards = createAsyncThunk(
   'orchards/fetchFarmOrchards',
@@ -14,3 +16,17 @@ export const fetchFarmOrchards = createAsyncThunk(
     }
   }
 );
+
+export const fetchTreeSurveyResults = createAsyncThunk(
+  'orchards/fetchTreeSurveyResults',
+  async (orchardIds: string[], thunkAPI) => {
+    try {
+      const orchardSurveyResults = await getTreeSurveyResults(orchardIds)
+      return orchardSurveyResults;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response.data);
+    }
+  }
+);
+
+

@@ -17,13 +17,6 @@ const orchardsSlice = createSlice({
   name: 'orchards',
   initialState,
   reducers: {
-    // Reducers for synchronous actions
-    // setFarmOrchards: (state, action: PayloadAction<FarmOrchardsMap>) => {
-    //   state.farmOrchards = action.payload;
-    // },
-    // setOrchardsSurvey: (state, action: PayloadAction<OrchardSurveyMap>) => {
-    //   state.orchardSurvey = action.payload;
-    // },
   },
   extraReducers: (builder) => {
     builder

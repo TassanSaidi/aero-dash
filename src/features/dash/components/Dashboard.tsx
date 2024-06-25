@@ -8,7 +8,16 @@ import {
 import DashTable from './DashTable/DashTable';
 import TreeData from '../types/Tree';
 import FarmLoader from './Loader/FarmLoader';
-import './Dashboard.css'; 
+import './Dashboard.css';
+import { useAppDispatch } from '../../../store/hooks';
+
+
+interface DashboardProps {
+  getFarmOrchards: () => void;
+  getOrchardSurveys: (orchardIds: string[]) => void;
+  orchardIds: string[];
+  isLoading: boolean;
+}
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
@@ -21,11 +30,10 @@ function formatDate(dateString: string): string {
 interface Column {
   header: string;
   accessor: string;
+
 }
 
-interface DashboardProps {
-  name: string;
-}
+
 
 interface ExtendedFarm extends Farm {
   orchards?: ExtendedOrchard[];
@@ -40,7 +48,23 @@ interface ExtendedOrchardSurvey extends OrchardSurvey {
 }
 
 // Dashboard component
-const Dashboard: React.FC<DashboardProps> = ({ name }) => {
+const Dashboard: React.FC<DashboardProps> = ({ ...props }) => {
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+  
+    if(!props.isLoading){
+      props.getFarmOrchards();
+    }
+  }, [dispatch]);
+
+  useEffect(() => {
+    if(!props.isLoading){
+      props.getOrchardSurveys(props.orchardIds);
+    }
+  
+  }, [dispatch, props.orchardIds]);
+
   // const [isLoading, setLoading] = useState(true);
   // const { data: farmsData, isLoading: isLoadingFarms } = useGetFarmsQuery();
   // const [triggerGetOrchards] = useLazyGetOrchardsQuery();
@@ -123,14 +147,14 @@ const Dashboard: React.FC<DashboardProps> = ({ name }) => {
 
     },
     averageNDRE: (value: any, row: Record<string, any>) => {
-    
+
     }
   };
 
 
   return (
     <div className="dashboard-container">
-      <h1>Aerbotics Tree Survey Dashboard {name}</h1>
+      <h1>Aerbotics Tree Survey Dashboard </h1>
       {/* {isLoading ? (
         <FarmLoader /> 
       ) : (

@@ -17,68 +17,43 @@ interface OrchardSurveyMap {
         latestSurveyDate: string;
     };
 }
+let counter = 0;
+
+// Function to fetch orchards for a set of farm IDs
+async function fetchOrchardsForFarms(farmIds: string[]): Promise<FarmOrchardsMap> {
+    const BATCH_SIZE = 100;
+    const farmOrchardsMap: FarmOrchardsMap = {};
+
+    for (let i = 0; i < farmIds.length; i += BATCH_SIZE) {
+        const batchFarmIds = farmIds.slice(i, i + BATCH_SIZE);
+        const orchardsPromises = batchFarmIds.map(async (farmId) => {
+            const orchardsForFarm = await getOrchards(farmId);
+            return { farmId, orchards: orchardsForFarm };
+        });
+
+        const orchardsResults = await Promise.all(orchardsPromises);
+        orchardsResults.forEach(({ farmId, orchards }) => {
+            farmOrchardsMap[farmId] = orchards;
+        });
+    }
+    return farmOrchardsMap;
+}
 
 async function getFarmOrchards(): Promise<FarmOrchardsMap> {
+    counter++;
+    console.log('Fetching farm orchards... ', counter);
     try {
         const response = await fetch(`${BASE_URL}/farms`, { headers: HEADERS });
         const data: FarmListResponse = await response.json();
         const farmIds = data.results.map(farm => farm.id);
+        console.log('Fetching farm orchards... 1');
 
-        const BATCH_SIZE = 5;
-        const farmOrchardsMap: FarmOrchardsMap = {};
-
-        for (let i = 0; i < farmIds.length; i += BATCH_SIZE) {
-            const batchFarmIds = farmIds.slice(i, i + BATCH_SIZE);
-            const orchardsPromises = batchFarmIds.map(async (farmId) => {
-                if (!farmOrchardsMap[farmId]) { // Check if orchards for farmId already fetched
-                    const orchardsForFarm = await getOrchards(farmId);
-                    farmOrchardsMap[farmId] = orchardsForFarm;
-                }
-                return { farmId, orchards: farmOrchardsMap[farmId] };
-            });
-
-            const orchardsResults = await Promise.all(orchardsPromises);
-            orchardsResults.forEach(({ farmId, orchards }) => {
-                farmOrchardsMap[farmId] = orchards; // Update map with fetched orchards
-            });
-        }
-        return farmOrchardsMap;
+        return await fetchOrchardsForFarms(farmIds);
     } catch (error) {
         console.error('Error fetching farm orchards:', error);
         throw error;
     }
 }
-
-
-
-async function getTreeSurveyResults(orchardIds: string[]): Promise<OrchardSurveyMap> {
-    try {
-        const BATCH_SIZE = 100; 
-        const orchardSurveyMap: OrchardSurveyMap = {};
-
-        for (const orchardId of orchardIds) {
-            const orchardSurvey: OrchardSurvey[] = await getOrchardSurveys(orchardId);
-            let offset = 0;
-            let hasMoreSurveys = true;
-            orchardSurveyMap[orchardId] = { surveys: [], latestSurveyDate: orchardSurvey[0].date };
-            while (hasMoreSurveys) {
-                const treeSurveyResults = await getTreeSurveys(orchardSurvey[0].id.toString(), BATCH_SIZE, offset);
-                if (treeSurveyResults.length > 0) {
-                    orchardSurveyMap[orchardId].surveys = orchardSurveyMap[orchardId].surveys.concat(treeSurveyResults);
-                    offset += BATCH_SIZE;
-                    hasMoreSurveys = treeSurveyResults.length === BATCH_SIZE;
-                } else {
-                    hasMoreSurveys = false;
-                }
-            }
-        }
-        return orchardSurveyMap;
-    } catch (error) {
-        console.log(error)
-        throw error;
-    }
-}
-
 
 
 async function getOrchards(farmId: number) {
@@ -102,5 +77,48 @@ async function getTreeSurveys(tree_survey_id: string, limit: number, offset: num
 }
 
 
+async function getTreeSurveyResults(orchardIds: string[]): Promise<OrchardSurveyMap> {
+    try {
+        const surveyPromises = orchardIds.map(orchardId => getSurveysForOrchard(orchardId));
+        const surveyResults = await Promise.all(surveyPromises);
+        const orchardSurveyMap: OrchardSurveyMap = {};
 
-export { getFarmOrchards, getOrchards, getOrchardSurveys, getTreeSurveys };
+        surveyResults.forEach(([orchardId, details]) => {
+            orchardSurveyMap[orchardId] = details;
+        });
+
+        return orchardSurveyMap;
+    } catch (error) {
+        console.log(error);
+        throw error;
+    }
+}
+
+async function getSurveysForOrchard(orchardId: string): Promise<[string, OrchardSurveyDetails]> {
+    const BATCH_SIZE = 2000;
+    const orchardSurvey: OrchardSurvey[] = await getOrchardSurveys(orchardId);
+    let offset = 0;
+    let hasMoreSurveys = true;
+    const surveys = [];
+
+    if (orchardSurvey.length === 0 || !orchardSurvey[0].date) {
+        return [orchardId, { surveys: [], latestSurveyDate: "" }];
+    }
+    let latestSurveyDate = orchardSurvey[0].date.toString();
+
+    while (hasMoreSurveys) {
+        const treeSurveyResults = await getTreeSurveys(orchardSurvey[0].id.toString(), BATCH_SIZE, offset);
+        if (treeSurveyResults.length > 0) {
+            surveys.push(...treeSurveyResults);
+            offset += BATCH_SIZE;
+            hasMoreSurveys = treeSurveyResults.length === BATCH_SIZE;
+        } else {
+            hasMoreSurveys = false;
+        }
+    }
+
+    return [orchardId, { surveys, latestSurveyDate }];
+}
+
+
+export { getFarmOrchards, getTreeSurveyResults };
