@@ -40,14 +40,10 @@ async function fetchOrchardsForFarms(farmIds: string[]): Promise<FarmOrchardsMap
 }
 
 async function getFarmOrchards(): Promise<FarmOrchardsMap> {
-    counter++;
-    console.log('Fetching farm orchards... ', counter);
     try {
         const response = await fetch(`${BASE_URL}/farms`, { headers: HEADERS });
         const data: FarmListResponse = await response.json();
         const farmIds = data.results.map(farm => farm.id);
-        console.log('Fetching farm orchards... 1');
-
         return await fetchOrchardsForFarms(farmIds);
     } catch (error) {
         console.error('Error fetching farm orchards:', error);
@@ -79,14 +75,18 @@ async function getTreeSurveys(tree_survey_id: string, limit: number, offset: num
 
 async function getTreeSurveyResults(orchardIds: string[]): Promise<OrchardSurveyMap> {
     try {
-        const surveyPromises = orchardIds.map(orchardId => getSurveysForOrchard(orchardId));
-        const surveyResults = await Promise.all(surveyPromises);
+        const MAX_ORCHARDS_PER_BATCH = 3;
+        const orchardChunks = chunkArray(orchardIds, MAX_ORCHARDS_PER_BATCH);
         const orchardSurveyMap: OrchardSurveyMap = {};
-
-        surveyResults.forEach(([orchardId, details]) => {
-            orchardSurveyMap[orchardId] = details;
-        });
-
+        for (const chunk of orchardChunks) {
+            console.log('Chunk:', chunk);
+            const surveyPromises = chunk.map(orchardId => getSurveysForOrchard(orchardId));
+            const surveyResults = await Promise.all(surveyPromises);
+            surveyResults.forEach(([orchardId, details]) => {
+                orchardSurveyMap[orchardId] = details;
+            });
+        }
+        console.log('Orchard Survey Map:', orchardSurveyMap);
         return orchardSurveyMap;
     } catch (error) {
         console.log(error);
@@ -94,8 +94,17 @@ async function getTreeSurveyResults(orchardIds: string[]): Promise<OrchardSurvey
     }
 }
 
+// Helper function to chunk an array
+function chunkArray(array, size) {
+    const chunkedArr = [];
+    for (let i = 0; i < array.length; i += size) {
+        chunkedArr.push(array.slice(i, i + size));
+    }
+    return chunkedArr;
+}
+
 async function getSurveysForOrchard(orchardId: string): Promise<[string, OrchardSurveyDetails]> {
-    const BATCH_SIZE = 2000;
+    const BATCH_SIZE = 3000;
     const orchardSurvey: OrchardSurvey[] = await getOrchardSurveys(orchardId);
     let offset = 0;
     let hasMoreSurveys = true;

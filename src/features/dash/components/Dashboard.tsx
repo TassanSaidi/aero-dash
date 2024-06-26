@@ -12,11 +12,22 @@ import './Dashboard.css';
 import { useAppDispatch } from '../../../store/hooks';
 
 
+interface DisplayData{
+  id: string;
+  farmName: string;
+  orchardName: string;
+  totalTreesSurveyed: number;
+  latestSurveyDate: string;
+  averageNDVI: number;
+  averageNDRE: number;
+} 
+
 interface DashboardProps {
   getFarmOrchards: () => void;
   getOrchardSurveys: (orchardIds: string[]) => void;
   orchardIds: string[];
   isLoading: boolean;
+  displayData: DisplayData[];
 }
 
 function formatDate(dateString: string): string {
@@ -50,7 +61,7 @@ interface ExtendedOrchardSurvey extends OrchardSurvey {
 // Dashboard component
 const Dashboard: React.FC<DashboardProps> = ({ ...props }) => {
   const dispatch = useAppDispatch();
-
+  let isLoading = props.isLoading;
   useEffect(() => {
   
     if(!props.isLoading){
@@ -153,21 +164,17 @@ const Dashboard: React.FC<DashboardProps> = ({ ...props }) => {
 
 
   return (
-    <div className="dashboard-container">
-      <h1>Aerbotics Tree Survey Dashboard </h1>
-      {/* {isLoading ? (
-        <FarmLoader /> 
-      ) : (
-        <div className="table-container">
-          <DashTable
-            columns={columns}
-            data={treeData}
-            clickableColumns={clickableColumns}
-          />
-        </div>
-      )} */}
+  <div className="dashboard-container">
+    <h1>Aerbotics Tree Survey Dashboard </h1>
+    <div className="table-container">
+      <DashTable
+        columns={columns}
+        data={props.displayData}
+        clickableColumns={clickableColumns}
+      />
     </div>
-  );
+  </div>
+);
 };
 
 export default Dashboard;
