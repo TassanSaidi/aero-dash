@@ -1,4 +1,4 @@
-type Survey = {
+export type Survey = {
     id: number;
     lat: number;
     lng: number;

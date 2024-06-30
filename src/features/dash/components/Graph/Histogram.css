@@ -37,4 +37,11 @@
     width: 100%;
     height: auto;
   }
+
+  .chartTitle {
+    font-size: 24px; /* Adjust font size */
+    font-weight: bold; /* Bold font weight */
+    text-align: center; /* Center align text */
+    margin-bottom: 20px; /* Add bottom margin for spacing */
+  }
   

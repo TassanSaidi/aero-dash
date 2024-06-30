@@ -1,0 +1,121 @@
+/* TreeDataTable.css */
+
+/* Container for centering the table */
+.tableContainer {
+    display: flex;
+    flex-direction: column; /* Align items vertically */
+    align-items: center; /* Center items horizontally */
+    width: 100%;
+    overflow-x: auto; /* Enable horizontal scrolling if needed */
+}
+
+/* Table title styling */
+.tableTitle {
+    font-size: 24px; /* Adjust font size */
+    font-weight: bold; /* Bold font weight */
+    text-align: center; /* Center align text */
+    margin-bottom: 20px; /* Add bottom margin for spacing */
+}
+
+/* Flexbox table styling */
+table {
+    display: flex;
+    flex-direction: column; /* Align headers and rows vertically */
+    width: 100%; /* Full width of the container */
+    max-width: 100%; /* Limit maximum width */
+    margin-bottom: 20px; /* Add bottom margin for spacing */
+    border-collapse: collapse; /* Collapse table borders */
+}
+
+/* Table header styling */
+thead {
+    display: flex;
+    width: 100%; /* Full width of the table */
+    background-color: #81c784; /* Light green background */
+    color: #ffffff; /* White text color */
+    position: sticky; /* Keep the header visible when scrolling */
+    top: 0; /* Align header to the top */
+    z-index: 1; /* Ensure header is above the table rows */
+}
+
+thead tr {
+    display: flex;
+    width: 100%;
+    flex: 1; /* Use flexbox to evenly distribute width */
+}
+
+thead th {
+    flex: 1; /* Evenly distribute the width of each header */
+    padding: 10px; /* Padding for spacing */
+    text-align: center; /* Center align text in headers */
+    border-right: 1px solid #ddd; /* Add a border to separate columns */
+    box-sizing: border-box; /* Ensure padding and borders are included in width */
+    position: relative;
+}
+
+thead th:last-child {
+    border-right: none; /* Remove the border for the last header */
+}
+
+/* Table body styling */
+tbody {
+    display: flex;
+    flex-direction: column; /* Align rows vertically */
+    width: 100%; /* Full width of the table */
+}
+
+tbody tr {
+    display: flex;
+    width: 100%; /* Full width of the table */
+}
+
+tbody td {
+    flex: 1; /* Evenly distribute the width of each cell */
+    padding: 10px; /* Padding for spacing */
+    text-align: center; /* Center align text in cells */
+    border-right: 1px solid #ddd; /* Add a border to separate columns */
+    border-bottom: 1px solid #ddd; /* Add a border to separate rows */
+    box-sizing: border-box; /* Ensure padding and borders are included in width */
+    transition: background-color 0.3s ease; /* Smooth transition for background color */
+}
+
+tbody td:last-child {
+    border-right: none; /* Remove the border for the last cell */
+}
+
+/* Clickable cell styling */
+tbody td.clickable {
+    background-color: #e0f2f1; /* Light teal background for clickable cells */
+    font-weight: bold; /* Make clickable cells bold */
+}
+
+tbody td.clickable:hover {
+    background-color: #80cbc4; /* Darker teal background on hover */
+    color: #ffffff; /* Change text color to white on hover */
+}
+
+/* Alternate row coloring */
+tbody tr:nth-child(even) {
+    background-color: #f1f8e9; /* Very light green background for even rows */
+}
+
+/* Hover effect for rows */
+tbody tr:hover {
+    background-color: #c8e6c9; /* Light green background on hover */
+}
+
+/* Clickable cell cursor */
+td[style*="pointer"] {
+    cursor: pointer; /* Change cursor to pointer for clickable cells */
+}
+
+/* Adjust table responsiveness for smaller screens */
+@media (max-width: 600px) {
+    table {
+        width: 100%; /* Use full width on small screens */
+    }
+
+    thead th, tbody td {
+        padding: 8px; /* Reduce padding on smaller screens */
+    }
+}
