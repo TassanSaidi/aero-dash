@@ -9,7 +9,7 @@ import FarmLoader from "../components/Loader/FarmLoader";
 import './DashContainer.css';
 import Histogram from "../components/Graph/Histogram";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 8;
 
 // define DisplayData type
 interface DisplayData {
@@ -253,7 +253,6 @@ const DashContainer: React.FC = () => {
         },
     ];
     
-    // src/features/dash/components/YourComponent.jsx
 
 return (
     <div className="container">

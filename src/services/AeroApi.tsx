@@ -17,9 +17,8 @@ interface OrchardSurveyMap {
         latestSurveyDate: string;
     };
 }
-let counter = 0;
 
-// Function to fetch orchards for a set of farm IDs
+
 async function fetchOrchardsForFarms(farmIds: string[]): Promise<FarmOrchardsMap> {
     const BATCH_SIZE = 100;
     const farmOrchardsMap: FarmOrchardsMap = {};
@@ -58,14 +57,14 @@ async function getOrchards(farmId: number) {
     return data.results;
 }
 
-// create function to retrieve OrchardSurvey list give orchardId
+
 async function getOrchardSurveys(orchardId: string) {
     const response = await fetch(`${BASE_URL}/surveys/?orchard_id=${orchardId}`, { headers: HEADERS });
     const data: OrchardSurveyListResponse = await response.json();
     return data.results;
 }
 
-// create async function to retrieve TreeSurvey list given tree_survey_id
+
 async function getTreeSurveys(tree_survey_id: string, limit: number, offset: number) {
     const response = await fetch(`${BASE_URL}/surveys/${tree_survey_id}/tree_surveys/?limit=${limit}&offset=${offset}`, { headers: HEADERS });
     const data: SurveyListResponse = await response.json();
@@ -75,7 +74,7 @@ async function getTreeSurveys(tree_survey_id: string, limit: number, offset: num
 
 async function getTreeSurveyResults(orchardIds: string[]): Promise<OrchardSurveyMap> {
     try {
-        const MAX_ORCHARDS_PER_BATCH = 3;
+        const MAX_ORCHARDS_PER_BATCH = 4;
         const orchardChunks = chunkArray(orchardIds, MAX_ORCHARDS_PER_BATCH);
         const orchardSurveyMap: OrchardSurveyMap = {};
         for (const chunk of orchardChunks) {
@@ -94,7 +93,7 @@ async function getTreeSurveyResults(orchardIds: string[]): Promise<OrchardSurvey
     }
 }
 
-// Helper function to chunk an array
+
 function chunkArray(array, size) {
     const chunkedArr = [];
     for (let i = 0; i < array.length; i += size) {

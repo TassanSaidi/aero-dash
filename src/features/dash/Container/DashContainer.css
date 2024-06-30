@@ -22,7 +22,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 10; /* Ensure loader is above content */
+    z-index: 10; 
 }
 
 .buttonGroup {

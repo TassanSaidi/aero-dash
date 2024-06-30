@@ -1,9 +1,6 @@
-// src/features/orchard/redux/orchardThunks.ts
-
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { getFarmOrchards, getTreeSurveyResults } from '../../../services/AeroApi';
 
-// integrate getTreeSurveyResults into thunk
 
 export const fetchFarmOrchards = createAsyncThunk(
   'orchards/fetchFarmOrchards',

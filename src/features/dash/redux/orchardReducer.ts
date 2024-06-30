@@ -1,5 +1,3 @@
-// src/features/orchard/redux/orchardSlice.ts
-
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { fetchFarmOrchards, fetchTreeSurveyResults } from './thunk';
 import { FarmOrchardsMap, OrchardSurveyMap } from './types';
@@ -13,7 +11,6 @@ const initialState: OrchardState = {
   farmOrchardsFetched: false,
 };
 
-// Create the slice
 const orchardsSlice = createSlice({
   name: 'orchards',
   initialState,
@@ -50,8 +47,8 @@ const orchardsSlice = createSlice({
   },
 });
 
-// Export actions for use in components
+
 export const { setFarmOrchards, setOrchardsSurvey } = orchardsSlice.actions;
 
-// Export the reducer to be included in the store
+
 export default orchardsSlice.reducer;
