@@ -8,6 +8,8 @@ import { format, set } from 'date-fns';
 import FarmLoader from "../components/Loader/FarmLoader";
 import './DashContainer.css';
 import Histogram from "../components/Graph/Histogram";
+import MapComponent from "../components/Map/MapModal";
+import { MapModalProps } from "../components/Map/MapModal";
 
 const PAGE_SIZE = 8;
 
@@ -22,6 +24,7 @@ interface DisplayData {
     averageNDRE: number;
     ndviValues: number[];
     ndreValues: number[];
+    surveyCoordinates: { lat: number, lng: number }[];
 }
 
 interface HistogramProps {
@@ -29,7 +32,7 @@ interface HistogramProps {
     title: string; // Title for the chart headline
     showHistogram: boolean; // Boolean to show/hide the histogram
     onClose: () => void; // Function to handle closing the modal
-  }
+}
 
 const DashContainer: React.FC = () => {
     const dispatch = useAppDispatch();
@@ -44,10 +47,9 @@ const DashContainer: React.FC = () => {
     const farmOrchardsFetched = useAppSelector(selectFarmOrchardsFetched);
     const [pendingSurvey, setPendingSurvey] = useState(true);
     const [histogram, setHistogram] = useState<HistogramProps>();
+    const [mapModal, setMapModal] = useState<MapModalProps>();
     const tableHeader = "Aerbotics Orchard Survey Data";
-
-
-
+  
     useEffect(() => {
         // Check if data for the current page already exists in displayDataRef
         if (!displayDataRef.current[currentPage] || displayDataRef.current[currentPage].length === 0) {
@@ -143,6 +145,7 @@ const DashContainer: React.FC = () => {
                         const ndviValues = surveys.map(survey => survey.ndvi);
                         const ndreValues = surveys.map(survey => survey.ndre);
                         const existingIndex = newTreeData.findIndex(data => data.id === orchard.id);
+                        const surveyCoordinates = surveys.map(survey => ({ lat: survey.lat, lng: survey.lng }));
 
                         if (existingIndex >= 0) {
                             // Update existing data
@@ -150,13 +153,16 @@ const DashContainer: React.FC = () => {
                                 ...newTreeData[existingIndex],
                                 totalTreesSurveyed,
                                 latestSurveyDate: latestSurveyDate ? formatDate(latestSurveyDate) : '',
-                                averageNDVI: parseFloat(averageNDVI)|| 0,
+                                averageNDVI: parseFloat(averageNDVI) || 0,
                                 averageNDRE: parseFloat(averageNDRE) || 0,
+                                ndviValues,
+                                ndreValues,
+                                surveyCoordinates,
                             };
                         } else {
                             // Add new data
                             newTreeData.push({
-                                id: orchard.id,
+                                id: orchard.id.toString(),
                                 farmId: farmId,
                                 orchardName: orchard.name,
                                 totalTreesSurveyed,
@@ -165,6 +171,8 @@ const DashContainer: React.FC = () => {
                                 averageNDRE: parseFloat(averageNDRE) || 0,
                                 ndviValues,
                                 ndreValues,
+                                surveyCoordinates
+
                             });
                         }
                     }
@@ -174,20 +182,12 @@ const DashContainer: React.FC = () => {
 
         setTreeData(newTreeData);
         console.log("SAIDI:", newTreeData);
-        // Assuming DisplayData objects can be uniquely identified by a property (e.g., id)
-        // Assuming currentPage is defined and holds the current page identifier
-        // Ensure the array for the current page exists
-
-
-        // Append newTreeData to the array for the current page
         if (!displayDataRef.current[currentPage] && newTreeData.length > 0) {
             displayDataRef.current[currentPage] = [];
         }
         if (displayDataRef.current[currentPage]) {
             displayDataRef.current[currentPage] = newTreeData;
         }
-
-
     };
 
     const formatDate = (inputDateStr: string): string => {
@@ -199,13 +199,8 @@ const DashContainer: React.FC = () => {
     };
 
     const handlePrevPage = () => {
-        // Determine if the current page is the last page with data
         const isLastPageWithData = !displayDataRef.current[currentPage + 1];
-
-        // Navigate to the previous page
         setCurrentPage(prevPage => Math.max(prevPage - 1, 0));
-
-        // If navigating back from the last page with data, update pendingSurvey to false
         if (isLastPageWithData) {
             setPendingSurvey(false);
         }
@@ -215,9 +210,9 @@ const DashContainer: React.FC = () => {
         const orchardData = treeData.find(data => data.id === orchardId);
         setHistogram({
             data: orchardData?.ndviValues || [],
-            title: 'NDVI Values for ' + orchardData?.orchardName +' with Average: ' + orchardData?.averageNDVI || '',
+            title: 'NDVI Values for ' + orchardData?.orchardName + ' with Average: ' + orchardData?.averageNDVI || '',
             showHistogram: true,
-            onClose: () => setHistogram({ ...histogram, showHistogram: false}),
+            onClose: () => setHistogram({ ...histogram, showHistogram: false }),
         })
     };
 
@@ -227,14 +222,29 @@ const DashContainer: React.FC = () => {
             data: orchardData?.ndreValues || [],
             title: 'NDRE Values for ' + orchardData?.orchardName + ' with Average: ' + orchardData?.averageNDRE || '',
             showHistogram: true,
-            onClose: () => setHistogram({ ...histogram, showHistogram: false}),
+            onClose: () => setHistogram({ ...histogram, showHistogram: false }),
         })
+    };
+
+    const handleOrchardClick = (orchardId: string) => {
+        const orchardData = treeData.find(data => data.id === orchardId);
+        setMapModal({
+            isOpen: true,
+            title: orchardData?.orchardName || '',
+            onClose: () => setMapModal({ ...mapModal, isOpen: false }),
+            coordinates: orchardData?.surveyCoordinates || [],
+        });
+        console.log("Corordinates:", orchardData?.surveyCoordinates || []);
     };
 
     const tableColumns = [
         { header: 'Farm ID', accessor: 'farmId', sortable: false }, // Not sortable
         { header: 'Orchard ID', accessor: 'id', sortable: false }, // Not sortable
-        { header: 'Orchard Name', accessor: 'orchardName', sortable: false }, // Not sortable
+        {
+            header: 'Orchard Name', accessor: 'orchardName', sortable: false,
+            isClickable: true,
+            onClick: handleOrchardClick,
+        }, 
         { header: 'Total Trees Surveyed', accessor: 'totalTreesSurveyed', sortable: false }, // Not sortable
         { header: 'Latest Survey Date', accessor: 'latestSurveyDate', sortable: true }, // Sortable
         {
@@ -252,50 +262,51 @@ const DashContainer: React.FC = () => {
             sortable: true, // Sortable
         },
     ];
-    
 
-return (
-    <div className="container">
-        {isLoading && (
-            <div className="loaderOverlay">
-                <FarmLoader />
-            </div>
-        )}
-        <div className="content">
-            {treeData ? (
-                <TreeDataTable data={treeData} columns={tableColumns} title={tableHeader} />
-            ) : displayDataRef.current[currentPage - 1] ? (
-                <TreeDataTable data={displayDataRef.current[currentPage - 1]} columns={tableColumns} title={tableHeader}  />
-            ) : (
-                <div>No data available</div>
+
+    return (
+        <div className="container">
+            {isLoading && (
+                <div className="loaderOverlay">
+                    <FarmLoader />
+                </div>
             )}
-            <div className="buttonGroup">
-                <button  
-                    onClick={handlePrevPage} 
-                    disabled={currentPage === 0 || isPageLoading}
-                    className={currentPage === 0 || isPageLoading ? 'disabled' : ''}
-                >
-                    Previous
-                </button>
-                <button 
-                    onClick={handleNextPage} 
-                    disabled={isPageLoading || pendingSurvey}
-                    className={isPageLoading || pendingSurvey ? 'disabled' : ''}
-                >
-                    Next
-                </button>
+            <div className="content">
+                {treeData ? (
+                    <TreeDataTable data={treeData} columns={tableColumns} title={tableHeader} />
+                ) : displayDataRef.current[currentPage - 1] ? (
+                    <TreeDataTable data={displayDataRef.current[currentPage - 1]} columns={tableColumns} title={tableHeader} />
+                ) : (
+                    <div>No data available</div>
+                )}
+                <div className="buttonGroup">
+                    <button
+                        onClick={handlePrevPage}
+                        disabled={currentPage === 0 || isPageLoading}
+                        className={currentPage === 0 || isPageLoading ? 'disabled' : ''}
+                    >
+                        Previous
+                    </button>
+                    <button
+                        onClick={handleNextPage}
+                        disabled={isPageLoading || pendingSurvey}
+                        className={isPageLoading || pendingSurvey ? 'disabled' : ''}
+                    >
+                        Next
+                    </button>
+                </div>
+                <Histogram
+                    data={histogram?.data || []}
+                    title={histogram?.title || ''}
+                    showHistogram={histogram?.showHistogram || false}
+                    onClose={histogram?.onClose || (() => { })}
+                />
+                <MapComponent title={mapModal?.title} onClose={mapModal?.onClose} isOpen={mapModal?.isOpen} coordinates={mapModal?.coordinates} center={[51.505, -0.09]} zoom={13} />
             </div>
-            <Histogram
-                data={histogram?.data || []}
-                title={histogram?.title || ''}
-                showHistogram={histogram?.showHistogram || false}
-                onClose={histogram?.onClose || (() => {})}
-            />
         </div>
-    </div>
-);
+    );
 
-    
+
 }
 
 export default DashContainer;

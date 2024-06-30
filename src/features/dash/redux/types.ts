@@ -1,3 +1,7 @@
+import { Survey } from "../../types/TreeSurvey";
+import { Orchard } from "../../types/Orchard";
+
+
 export interface FarmOrchardsMap {
     [farmId: string]: Orchard[];
 }

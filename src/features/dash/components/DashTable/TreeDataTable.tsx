@@ -23,11 +23,20 @@ const TreeDataTable: React.FC<TreeDataTableProps> = ({ data, columns, title }) =
 
     const handleSort = (key: string) => {
         let direction: 'ascending' | 'descending' | 'default' = 'ascending';
+    
+        // Check if the same column is clicked again
         if (sortConfig.key === key) {
-            direction = sortConfig.direction === 'ascending' ? 'descending' : 'default';
+            // Toggle between ascending, descending, and default
+            if (sortConfig.direction === 'ascending') {
+                direction = 'descending';
+            } else if (sortConfig.direction === 'descending') {
+                direction = 'default';
+            }
         }
+    
         setSortConfig({ key, direction });
     };
+    
 
     const sortedData = [...data].sort((a, b) => {
         if (sortConfig.direction === 'ascending') {
