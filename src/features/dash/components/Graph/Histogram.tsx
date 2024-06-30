@@ -1,4 +1,3 @@
-// src/Histogram.tsx
 import React, { useEffect, useRef } from 'react';
 import Chart from 'chart.js/auto';
 import './Histogram.css'; // Import the CSS file for styling
@@ -83,13 +82,7 @@ const Histogram: React.FC<HistogramProps> = ({ data, title, showHistogram, onClo
             },
           },
           plugins: {
-            title: {
-              display: true,
-              text: title,
-              font: {
-                size: 18
-              }
-            }
+            // Remove title configuration from Chart.js
           },
           scales: {
             y: {
@@ -116,12 +109,13 @@ const Histogram: React.FC<HistogramProps> = ({ data, title, showHistogram, onClo
         }
       });
     }
-  }, [data, title, showHistogram]);
+  }, [data, showHistogram]);
 
   return (
     <div className={`modal ${showHistogram ? 'show' : ''}`} onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
-        <h3>{title}</h3>
+        {/* Keep the larger title here */}
+        <h2 className="chartTitle">{title}</h2>
         <canvas ref={chartContainer} width="500" height="400"></canvas>
       </div>
     </div>

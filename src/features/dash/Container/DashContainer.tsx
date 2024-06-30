@@ -4,9 +4,10 @@ import { fetchFarmOrchards, fetchTreeSurveyResults } from "../redux/thunk";
 import { selectFarmOrchards, selectOrchardSurveys, selectLoading, selectFarmOrchardsFetched } from "../redux/Selector";
 import TreeDataTable from "../../dash/components/DashTable/TreeDataTable";
 import { FarmOrchardsMap, OrchardSurveyMap } from "../redux/types";
-import { format } from 'date-fns';
+import { format, set } from 'date-fns';
 import FarmLoader from "../components/Loader/FarmLoader";
 import './DashContainer.css';
+import Histogram from "../components/Graph/Histogram";
 
 const PAGE_SIZE = 10;
 
@@ -19,7 +20,16 @@ interface DisplayData {
     latestSurveyDate: string;
     averageNDVI: number;
     averageNDRE: number;
+    ndviValues: number[];
+    ndreValues: number[];
 }
+
+interface HistogramProps {
+    data: number[]; // Array of numbers for the histogram
+    title: string; // Title for the chart headline
+    showHistogram: boolean; // Boolean to show/hide the histogram
+    onClose: () => void; // Function to handle closing the modal
+  }
 
 const DashContainer: React.FC = () => {
     const dispatch = useAppDispatch();
@@ -33,6 +43,9 @@ const DashContainer: React.FC = () => {
     const isLoading = useAppSelector(selectLoading);
     const farmOrchardsFetched = useAppSelector(selectFarmOrchardsFetched);
     const [pendingSurvey, setPendingSurvey] = useState(true);
+    const [histogram, setHistogram] = useState<HistogramProps>();
+    const tableHeader = "Aerbotics Orchard Survey Data";
+
 
 
     useEffect(() => {
@@ -127,7 +140,8 @@ const DashContainer: React.FC = () => {
                         const totalTreesSurveyed = surveys.length;
                         const averageNDVI = (surveys.reduce((acc, survey) => acc + survey.ndvi, 0) / totalTreesSurveyed).toFixed(2);
                         const averageNDRE = (surveys.reduce((acc, survey) => acc + survey.ndre, 0) / totalTreesSurveyed).toFixed(2);
-
+                        const ndviValues = surveys.map(survey => survey.ndvi);
+                        const ndreValues = surveys.map(survey => survey.ndre);
                         const existingIndex = newTreeData.findIndex(data => data.id === orchard.id);
 
                         if (existingIndex >= 0) {
@@ -136,8 +150,8 @@ const DashContainer: React.FC = () => {
                                 ...newTreeData[existingIndex],
                                 totalTreesSurveyed,
                                 latestSurveyDate: latestSurveyDate ? formatDate(latestSurveyDate) : '',
-                                averageNDVI: parseFloat(averageNDVI),
-                                averageNDRE: parseFloat(averageNDRE),
+                                averageNDVI: parseFloat(averageNDVI)|| 0,
+                                averageNDRE: parseFloat(averageNDRE) || 0,
                             };
                         } else {
                             // Add new data
@@ -147,8 +161,10 @@ const DashContainer: React.FC = () => {
                                 orchardName: orchard.name,
                                 totalTreesSurveyed,
                                 latestSurveyDate: latestSurveyDate ? formatDate(latestSurveyDate) : '',
-                                averageNDVI: parseFloat(averageNDVI),
-                                averageNDRE: parseFloat(averageNDRE)
+                                averageNDVI: parseFloat(averageNDVI) || 0,
+                                averageNDRE: parseFloat(averageNDRE) || 0,
+                                ndviValues,
+                                ndreValues,
                             });
                         }
                     }
@@ -185,10 +201,10 @@ const DashContainer: React.FC = () => {
     const handlePrevPage = () => {
         // Determine if the current page is the last page with data
         const isLastPageWithData = !displayDataRef.current[currentPage + 1];
-        
+
         // Navigate to the previous page
         setCurrentPage(prevPage => Math.max(prevPage - 1, 0));
-        
+
         // If navigating back from the last page with data, update pendingSurvey to false
         if (isLastPageWithData) {
             setPendingSurvey(false);
@@ -196,57 +212,91 @@ const DashContainer: React.FC = () => {
     };
 
     const handleAverageNDVIClick = (orchardId: string) => {
-        console.log("Average NDVI clicked for orchard ID:", orchardId);
+        const orchardData = treeData.find(data => data.id === orchardId);
+        setHistogram({
+            data: orchardData?.ndviValues || [],
+            title: 'NDVI Values for ' + orchardData?.orchardName +' with Average: ' + orchardData?.averageNDVI || '',
+            showHistogram: true,
+            onClose: () => setHistogram({ ...histogram, showHistogram: false}),
+        })
     };
 
     const handleAverageNDREClick = (orchardId: string) => {
-        console.log("Average NDRE clicked for orchard ID:", orchardId);
+        const orchardData = treeData.find(data => data.id === orchardId);
+        setHistogram({
+            data: orchardData?.ndreValues || [],
+            title: 'NDRE Values for ' + orchardData?.orchardName + ' with Average: ' + orchardData?.averageNDRE || '',
+            showHistogram: true,
+            onClose: () => setHistogram({ ...histogram, showHistogram: false}),
+        })
     };
 
     const tableColumns = [
-        { header: 'Orchard ID', accessor: 'id' },
-        { header: 'Farm Name', accessor: 'farmName' },
-        { header: 'Orchard Name', accessor: 'orchardName' },
-        { header: 'Total Trees Surveyed', accessor: 'totalTreesSurveyed' },
-        { header: 'Latest Survey Date', accessor: 'latestSurveyDate' },
+        { header: 'Farm ID', accessor: 'farmId', sortable: false }, // Not sortable
+        { header: 'Orchard ID', accessor: 'id', sortable: false }, // Not sortable
+        { header: 'Orchard Name', accessor: 'orchardName', sortable: false }, // Not sortable
+        { header: 'Total Trees Surveyed', accessor: 'totalTreesSurveyed', sortable: false }, // Not sortable
+        { header: 'Latest Survey Date', accessor: 'latestSurveyDate', sortable: true }, // Sortable
         {
             header: 'Average NDVI',
             accessor: 'averageNDVI',
             isClickable: true,
             onClick: handleAverageNDVIClick,
+            sortable: true, // Sortable
         },
         {
             header: 'Average NDRE',
             accessor: 'averageNDRE',
             isClickable: true,
             onClick: handleAverageNDREClick,
+            sortable: true, // Sortable
         },
     ];
-    return (
-        <div className="container">
-            <div className="content">
-                {isLoading && (
-                    <div className="loaderOverlay">
-                        <FarmLoader />
-                    </div>
-                )}
-                <h2>Orchard Survey Data</h2>
-                {treeData !== undefined && treeData !== null ? (
-                    <TreeDataTable data={treeData} columns={tableColumns} />
-                ) : displayDataRef.current[currentPage - 1] !== undefined && displayDataRef.current[currentPage - 1] !== null ? (
-                    // Assuming displayDataRef holds the previous page's data in a format that can be rendered similarly
-                    <TreeDataTable data={displayDataRef.current[currentPage - 1]} columns={tableColumns} />
-                ) : (
-                    // Fallback content or message when there's no data to display
-                    <div>No data available</div>
-                )}
-                <div className="buttonGroup">
-                    <button onClick={handlePrevPage} disabled={currentPage === 0 || isPageLoading}>Previous</button>
-                    <button onClick={handleNextPage} disabled={isPageLoading || pendingSurvey}>Next</button>
-                </div>
+    
+    // src/features/dash/components/YourComponent.jsx
+
+return (
+    <div className="container">
+        {isLoading && (
+            <div className="loaderOverlay">
+                <FarmLoader />
             </div>
+        )}
+        <div className="content">
+            {treeData ? (
+                <TreeDataTable data={treeData} columns={tableColumns} title={tableHeader} />
+            ) : displayDataRef.current[currentPage - 1] ? (
+                <TreeDataTable data={displayDataRef.current[currentPage - 1]} columns={tableColumns} title={tableHeader}  />
+            ) : (
+                <div>No data available</div>
+            )}
+            <div className="buttonGroup">
+                <button  
+                    onClick={handlePrevPage} 
+                    disabled={currentPage === 0 || isPageLoading}
+                    className={currentPage === 0 || isPageLoading ? 'disabled' : ''}
+                >
+                    Previous
+                </button>
+                <button 
+                    onClick={handleNextPage} 
+                    disabled={isPageLoading || pendingSurvey}
+                    className={isPageLoading || pendingSurvey ? 'disabled' : ''}
+                >
+                    Next
+                </button>
+            </div>
+            <Histogram
+                data={histogram?.data || []}
+                title={histogram?.title || ''}
+                showHistogram={histogram?.showHistogram || false}
+                onClose={histogram?.onClose || (() => {})}
+            />
         </div>
-    );
+    </div>
+);
+
+    
 }
 
 export default DashContainer;
